@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from PIL import Image
+from math import ceil
 
 """Ranks a pixel of an img, either in RGB, in L or in LA mode"""
 def pixel_rank(img, pixel):
@@ -70,19 +71,29 @@ Get all the windows of a given image to pass to the neural network
 """
 def img_windows(img):
     width, height = img.size
-    while(width > 20 and height > 20):
+
+    if width < 20 or height < 20:
+        factor = 1
+        factor = max(factor, 20.0 / width)
+        factor = max(factor, 20.0 / height)
+
+        width = int(ceil(width * factor))
+        height = int(ceil(height * factor))
+
+        img = img.resize((width, height), Image.ANTIALIAS)
+
+    while width >= 20 and height >= 20:
         for crop in img_crops(img):
             yield crop
 
         width  = int(round(width / 1.2))
         height = int(round(height / 1.2))
+
         img = img.resize((width, height), Image.ANTIALIAS)
 
 """
 Get all the representing vectors of the windows of a given image
 """
 def img_features_vectors(img):
-    print "img_features_vectors"
     for window in img_windows(img):
-        print "window"
         yield img_features(window)
