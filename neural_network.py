@@ -30,7 +30,7 @@ def test_brain(net, images):
 """Opens the images of the data set"""
 def get_data_set(files):
     for img in files:
-        yield Image.open(img)
+        yield Image.open(img).mode('L')
 
 def main():
     parser = argparse.ArgumentParser(description='Face detection using Neural Networks')
