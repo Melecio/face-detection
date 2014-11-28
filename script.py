@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*- 
 
 import sys
+import argparse
 from PIL import Image, ImageFilter
 
 """Ranks a tuple (r,g,b) between 0 and 16777215"""
@@ -24,11 +25,28 @@ def get_features(img):
         for j in range(height):
             v = rank(img.getpixel((i,j)))
             features.append(v)     # appending every pixel 
-            
+
+"""Given list of images (data_set), trains the network with backpropagation algorithm"""
+def train_brain(data_set):
+    for img in data_set:
+        inputs = get_features(img)
+        #call backprop inputs
+
+
+"""Returns a list of images"""
+def get_data_set(files):
+    data_set = []
+    for img in files:
+        data_set.append(Image.open(img))
+    return data_set
 
 def main():
-    img = Image.open(sys.argv[1])
-    img.load()
+    parser = argparse.ArgumentParser(description='Face detection using Neural Networks')
+    parser.add_argument('-t', '--train', help='Receives a list of images (training set)', nargs='+')
+    parser.add_argument('-p', '--test', help='Receives a list of images (testing set)', nargs='+')
+    parser.add_argument('-n', '--network', help='Read the file with the already trained network object', nargs=1)
+    args = parser.parse_args()
+
 
 if __name__ == "__main__":
         main()      
