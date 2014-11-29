@@ -15,6 +15,22 @@ def pixel_rank(img, pixel):
         l, _ = img.getpixel(pixel)
         return l
 
+"""Makes an img samller than 20x20 at least 20x20"""
+def smaller_img(img):
+    width, height = img.size
+
+    if width < 20 or height < 20:
+        factor = 1
+        factor = max(factor, 20.0 / width)
+        factor = max(factor, 20.0 / height)
+
+        width = int(ceil(width * factor))
+        height = int(ceil(height * factor))
+
+        img = img.resize((width, height), Image.ANTIALIAS)
+
+    return img
+
 """Returns a 20x20 window given the left and top coordinates"""
 def img_window(img, i, j):
     width, height = img.size
@@ -33,7 +49,9 @@ Returns a vector of a linearly ranked value of img
 This function should be called with a 20x20 pixels img (window)
 """
 def img_features(img):
+    img = smaller_img(img)
     width, height = img.size
+
     vector = []
     for i in range(width):
         for j in range(height):
@@ -70,17 +88,8 @@ def img_crops(img):
 Get all the windows of a given image to pass to the neural network
 """
 def img_windows(img):
+    img = smaller_img(img)
     width, height = img.size
-
-    if width < 20 or height < 20:
-        factor = 1
-        factor = max(factor, 20.0 / width)
-        factor = max(factor, 20.0 / height)
-
-        width = int(ceil(width * factor))
-        height = int(ceil(height * factor))
-
-        img = img.resize((width, height), Image.ANTIALIAS)
 
     while width >= 20 and height >= 20:
         for crop in img_crops(img):
