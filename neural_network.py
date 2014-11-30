@@ -3,6 +3,8 @@
 
 import sys
 import argparse
+from os import listdir
+from os.path import isfile, join
 
 from random import shuffle
 
@@ -23,7 +25,7 @@ from image import img_features_vectors, img_features
 """Given list of images, train the network with the backpropagation algorithm"""
 def train_data_set(files):
     # Because PyBrain may take the first 25% for testing
-    shuffle(files)
+    # shuffle(files)
     data_set = SupervisedDataSet(400, 1)
     for path, target in files:
         img = Image.open(path).convert('L')
@@ -33,11 +35,10 @@ def train_data_set(files):
     return data_set
 
 """Given list of images, test the network with the backpropagation algorithm"""
-def test_brain(net, images):
+def test_network(net, images):
     for img in images:
         for vector in img_features_vectors(img):
-            pass
-            # call backprop vector
+            print net.activate(vector)
         img.close()
 
 """Opens the images of the data set"""
@@ -45,34 +46,40 @@ def open_imgs(files):
     for path in files:
         yield Image.open(path).convert('L')
 
+"""Given a directory, opens it and gets the files"""
+def get_files(directory):
+    files = listdir(directory)
+    paths = map(lambda f: join(directory,f), files)
+    return [ p for p in paths if isfile(p) ]
+
 """Parsing of the command-line input"""
 def read():
     parser = argparse.ArgumentParser(description='Face detection using Neural Networks')
-    parser.add_argument('-t', '--train-faces', help='Receives a list of images (training set)', nargs='+')
-    parser.add_argument('-f', '--train-non-faces', help='Receives a list of images (training set)', nargs='+')
+    parser.add_argument('-t', '--train-faces', help='Receives a directory with files to train with', nargs='+')
+    parser.add_argument('-f', '--train-non-faces', help='Receives a directory with files to train with', nargs='+')
     parser.add_argument('-p', '--test', help='Receives a list of images (testing set)', nargs='+')
-    parser.add_argument('-n', '--network', help='Read the file with the already trained network object', nargs=1)
+    parser.add_argument('-r', '--read', help='Read the file with the already trained network object', nargs=1)
     parser.add_argument('-w', '--write', help='Write the network to the specified file (format is .xml)', nargs=1)
 
     args = parser.parse_args()
 
     # Read the Neural Network Object
-    if args.network != None:
-        file_object = open(args.network, 'r')
-        net = NetworkReader.readFrom(file_object)
+    if args.read:
+        net = NetworkReader.readFrom(args.read[0])
     else:
         net = buildNetwork(400, 80, 16, 1, bias=True)
         # net = buildNetwork(400, 80, 16, 1, bias=True, hiddenclass=TanhLayer)
 
     # If there are some files to train with
-    if (args.train_faces != None or args.train_non_faces != None):
-        if args.train_faces != None:
-            faces = args.train_faces
+    if (args.train_faces or args.train_non_faces):
+
+        if args.train_faces:
+            faces = get_files(args.train_faces[0])
         else:
             faces = []
 
-        if args.train_non_faces != None:
-            non_faces = args.train_non_faces
+        if args.train_non_faces:
+            non_faces = get_files(args.train_non_faces[0])
         else:
             non_faces = []
 
@@ -85,24 +92,33 @@ def read():
         training_files = None
 
     # If there are some files to test with
-    if args.test != None:
-        testing_set = open_imgs(args.test)
+    if args.test:
+        testing_imgs = open_imgs(args.test)
     else:
-        testing_set = None
+        testing_imgs = None
 
-    return net, training_files, testing_set, args.write
+    # If there is a writing file
+    if args.write:
+        write_file = args.write[0]
+    else:
+        write_file = None
+
+    return net, training_files, testing_imgs, write_file
 
 """Main function"""
 def main():
-    net, training_files, testing_set, write_file = read()
+    net, training_files, testing_imgs, write_file = read()
 
     if training_files:
         training_set = train_data_set(training_files)
         trainer = BackpropTrainer(net, training_set, learningrate=0.01, verbose=True)
         trainer.train()
 
-        if write_file:
-            NetworkWriter.writeToFile(net, write_file)
+    if write_file:
+        NetworkWriter.writeToFile(net, write_file)
+
+    if testing_imgs:
+        test_network(net, testing_imgs)
 
 if __name__ == "__main__":
     main()
