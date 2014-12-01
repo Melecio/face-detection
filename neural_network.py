@@ -15,12 +15,15 @@ from pybrain.structure.modules       import SoftmaxLayer, TanhLayer
 from pybrain.tools.xml.networkwriter import NetworkWriter
 from pybrain.tools.xml.networkreader import NetworkReader
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 import itertools
 
 # Module image in 'image.py'
 from image import img_features_vectors, img_features
+
+def open_img(path):
+    return ImageOps.equalize(Image.open(path).convert('L'))
 
 """Given list of images, create the training data set"""
 def train_data_set(files):
@@ -28,7 +31,7 @@ def train_data_set(files):
     # shuffle(files)
     data_set = ClassificationDataSet(400, nb_classes=2, class_labels=['face', 'non-face'])
     for path, target in files:
-        img = Image.open(path).convert('L')
+        img = open_img(path)
         vector = img_features(img)
         img.close()
         data_set.addSample(vector, target)
@@ -44,7 +47,7 @@ def test_network(net, images):
 """Opens the images of the data set"""
 def open_imgs(files):
     for path in files:
-        yield Image.open(path).convert('L')
+        yield open_img(path)
 
 """Given a directory, opens it and gets the files"""
 def get_files(directory):
@@ -115,8 +118,8 @@ def main():
         print "training"
         print training_set, len(training_set)
         training_set.saveToFile('train.set')
-        trainer = BackpropTrainer(net, training_set)
-        trainer.trainEpochs(1)
+        trainer = BackpropTrainer(net, training_set, verbose=True)
+        trainer.trainEpochs(1000)
 
     if testing_imgs:
         print "testing"
