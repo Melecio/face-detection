@@ -8,12 +8,12 @@ from os.path import isfile, join
 
 from random import shuffle
 
-from pybrain.tools.shortcuts import buildNetwork
+from pybrain.datasets                import ClassificationDataSet
+from pybrain.tools.shortcuts         import buildNetwork
+from pybrain.supervised.trainers     import BackpropTrainer
+from pybrain.structure.modules       import SoftmaxLayer, TanhLayer
 from pybrain.tools.xml.networkwriter import NetworkWriter
 from pybrain.tools.xml.networkreader import NetworkReader
-from pybrain.supervised import BackpropTrainer
-from pybrain.datasets import SupervisedDataSet
-# from pybrain.structure.modules import TanhLayer
 
 from PIL import Image
 
@@ -22,16 +22,16 @@ import itertools
 # Module image in 'image.py'
 from image import img_features_vectors, img_features
 
-"""Given list of images, train the network with the backpropagation algorithm"""
+"""Given list of images, create the training data set"""
 def train_data_set(files):
     # Because PyBrain may take the first 25% for testing
     # shuffle(files)
-    data_set = SupervisedDataSet(400, 1)
+    data_set = ClassificationDataSet(400, nb_classes=2, class_labels=['face', 'non-face'])
     for path, target in files:
         img = Image.open(path).convert('L')
         vector = img_features(img)
         img.close()
-        data_set.addSample(vector, (target,))
+        data_set.addSample(vector, target)
     return data_set
 
 """Given list of images, test the network with the backpropagation algorithm"""
@@ -67,7 +67,7 @@ def read():
     if args.read:
         net = NetworkReader.readFrom(args.read[0])
     else:
-        net = buildNetwork(400, 80, 16, 1, bias=True)
+        net = buildNetwork(400, 20, 1, bias=True, outclass=SoftmaxLayer)
         # net = buildNetwork(400, 80, 16, 1, bias=True, hiddenclass=TanhLayer)
 
     # If there are some files to train with
@@ -84,8 +84,8 @@ def read():
             non_faces = []
 
         # Expected targets
-        faces     = map(lambda path: (path, 1), faces)
-        non_faces = map(lambda path: (path, 0), non_faces)
+        faces     = map(lambda path: (path, (1,)), faces)
+        non_faces = map(lambda path: (path, (0,)), non_faces)
 
         training_files = faces + non_faces
     else:
@@ -110,15 +110,20 @@ def main():
     net, training_files, testing_imgs, write_file = read()
 
     if training_files:
+        print "creating training data set"
         training_set = train_data_set(training_files)
-        trainer = BackpropTrainer(net, training_set, learningrate=0.01, verbose=True)
-        trainer.train()
+        print "training"
+        print training_set, len(training_set)
+        training_set.saveToFile('train.set')
+        trainer = BackpropTrainer(net, training_set)
+        trainer.trainEpochs(1)
+
+    if testing_imgs:
+        print "testing"
+        test_network(net, testing_imgs)
 
     if write_file:
         NetworkWriter.writeToFile(net, write_file)
-
-    if testing_imgs:
-        test_network(net, testing_imgs)
 
 if __name__ == "__main__":
     main()

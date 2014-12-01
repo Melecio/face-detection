@@ -6,14 +6,20 @@ from math import ceil
 
 """Ranks a pixel of an img, either in RGB, in L or in LA mode"""
 def pixel_rank(img, pixel):
+    result = 0
     if img.mode == 'RGB':
         (r,g,b) = img.getpixel(pixel)
-        return int(round((r + g + b) / 3))
+        result = int(round((r + g + b) / 3))
+    elif img.mode == 'RGBA':
+        (r,g,b,_) = img.getpixel(pixel)
+        result = int(round((r + g + b) / 3))
     elif img.mode == 'L':
-        return img.getpixel(pixel)
+        result = img.getpixel(pixel)
     elif img.mode == 'LA':
         l, _ = img.getpixel(pixel)
-        return l
+        result = l
+
+    return result / 255.0
 
 """Makes an img samller than 20x20 at least 20x20"""
 def smaller_img(img):
