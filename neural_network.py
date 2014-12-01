@@ -29,8 +29,13 @@ def open_img(path):
 def train_data_set(files):
     # Because PyBrain may take the first 25% for testing
     # shuffle(files)
-    data_set = ClassificationDataSet(400, nb_classes=2, class_labels=['face', 'non-face'])
+    data_set = ClassificationDataSet(400, 1, nb_classes=2)
+    number = 0
     for path, target in files:
+        if number % 100 == 0:
+            print number,
+            sys.stdout.flush()
+        number += 1
         img = open_img(path)
         vector = img_features(img)
         img.close()
@@ -70,7 +75,7 @@ def read():
     if args.read:
         net = NetworkReader.readFrom(args.read[0])
     else:
-        net = buildNetwork(400, 20, 1, bias=True, outclass=SoftmaxLayer)
+        net = buildNetwork(400, 5, 2, bias=True, outclass=SoftmaxLayer)
         # net = buildNetwork(400, 80, 16, 1, bias=True, hiddenclass=TanhLayer)
 
     # If there are some files to train with
@@ -115,11 +120,16 @@ def main():
     if training_files:
         print "creating training data set"
         training_set = train_data_set(training_files)
-        print "training"
-        print training_set, len(training_set)
+        training_set._convertToOneOfMany() # I don't know why this line is needed
+
+        # print "training"
+        # print net
+        # print training_set, len(training_set)
+        # print training_set.calculateStatistics()
+
         training_set.saveToFile('train.set')
-        trainer = BackpropTrainer(net, training_set, verbose=True)
-        trainer.trainEpochs(1000)
+        trainer = BackpropTrainer(net, training_set, learningrate=0.05, verbose=True)
+        trainer.trainUntilConvergence(maxEpochs=500)
 
     if testing_imgs:
         print "testing"
