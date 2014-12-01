@@ -47,7 +47,7 @@ def img_window(img, i, j):
         j = height - 20
 
     box = (i, j, i+20, j+20)
-    return img.crop(box)
+    return img.crop(box), box
 
 
 """
@@ -97,10 +97,13 @@ def img_windows(img):
     img = smaller_img(img)
     width, height = img.size
 
-    while width >= 20 and height >= 20:
-        for crop in img_crops(img):
-            yield crop
+    factor = 1
 
+    while width >= 20 and height >= 20:
+        for crop, box in img_crops(img):
+            yield crop, tuple(map(lambda x: x * factor, box))
+
+        factor *= 1.2
         width  = int(round(width / 1.2))
         height = int(round(height / 1.2))
 
@@ -110,5 +113,5 @@ def img_windows(img):
 Get all the representing vectors of the windows of a given image
 """
 def img_features_vectors(img):
-    for window in img_windows(img):
-        yield (window, img_features(window))
+    for window, box in img_windows(img):
+        yield img_features(window), box, window

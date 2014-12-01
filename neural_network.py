@@ -15,7 +15,7 @@ from pybrain.structure.modules       import SoftmaxLayer, TanhLayer
 from pybrain.tools.xml.networkwriter import NetworkWriter
 from pybrain.tools.xml.networkreader import NetworkReader
 
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageDraw, ImageFilter
 
 import itertools
 
@@ -23,7 +23,10 @@ import itertools
 from image import img_features_vectors, img_features
 
 def open_img(path):
-    return ImageOps.equalize(Image.open(path).convert('L'))
+    return Image.open(path).convert('L')
+
+def process(img):
+    return ImageOps.equalize(img)
 
 """Given list of images, create the training data set"""
 def train_data_set(files):
@@ -45,16 +48,20 @@ def train_data_set(files):
 """Given list of images, test the network with the backpropagation algorithm"""
 def test_network(net, images):
     for img in images:
-        for window, vector in img_features_vectors(img):
+        new_img = img.convert('RGB')
+        draw = ImageDraw.Draw(new_img)
+        for vector, box, window in img_features_vectors(img):
             nof, yesf = net.activate(vector)
             if yesf > nof:
-		window.show()
-        img.close()
+                print "found a face"
+                window.show()
+                draw.rectangle(box, outline=0xff0000)
+        new_img.show()
 
 """Opens the images of the data set"""
 def open_imgs(files):
     for path in files:
-        yield open_img(path)
+        yield processs(open_img(path))
 
 """Given a directory, opens it and gets the files"""
 def get_files(directory):
