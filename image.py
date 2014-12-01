@@ -111,4 +111,4 @@ Get all the representing vectors of the windows of a given image
 """
 def img_features_vectors(img):
     for window in img_windows(img):
-        yield img_features(window)
+        yield (window, img_features(window))

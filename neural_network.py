@@ -28,7 +28,7 @@ def open_img(path):
 """Given list of images, create the training data set"""
 def train_data_set(files):
     # Because PyBrain may take the first 25% for testing
-    # shuffle(files)
+    shuffle(files)
     data_set = ClassificationDataSet(400, 1, nb_classes=2)
     number = 0
     for path, target in files:
@@ -45,8 +45,10 @@ def train_data_set(files):
 """Given list of images, test the network with the backpropagation algorithm"""
 def test_network(net, images):
     for img in images:
-        for vector in img_features_vectors(img):
-            print net.activate(vector)
+        for window, vector in img_features_vectors(img):
+            nof, yesf = net.activate(vector)
+            if yesf > nof:
+		window.show()
         img.close()
 
 """Opens the images of the data set"""
@@ -92,8 +94,8 @@ def read():
             non_faces = []
 
         # Expected targets
-        faces     = map(lambda path: (path, (1,)), faces)
-        non_faces = map(lambda path: (path, (0,)), non_faces)
+        faces     = map(lambda path: (path, [1]), faces)
+        non_faces = map(lambda path: (path, [0]), non_faces)
 
         training_files = faces + non_faces
     else:
@@ -122,14 +124,14 @@ def main():
         training_set = train_data_set(training_files)
         training_set._convertToOneOfMany() # I don't know why this line is needed
 
-        # print "training"
+        print "training"
         # print net
         # print training_set, len(training_set)
         # print training_set.calculateStatistics()
 
         training_set.saveToFile('train.set')
         trainer = BackpropTrainer(net, training_set, learningrate=0.05, verbose=True)
-        trainer.trainUntilConvergence(maxEpochs=500)
+        trainer.trainUntilConvergence(maxEpochs=100)
 
     if testing_imgs:
         print "testing"
